@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Ajedrez</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tablero de Ajedrez</h1>
+        <div class="game-info">
+            <div class="board-container">
+                <div id="chessboard"></div>
+            </div>
+            <div class="moves-container">
+                <h2>Jugadas</h2>
+                <div id="moves-list"></div>
+                <section class="game-state" aria-labelledby="state-title">
+                    <h2 id="state-title">Estado de la partida</h2>
+                    <p id="game-status" aria-live="polite"></p>
+                    <label for="fen-output">FEN</label>
+                    <input id="fen-output" type="text" readonly>
+                    <label for="pgn-output">PGN</label>
+                    <textarea id="pgn-output" rows="4" readonly></textarea>
+                </section>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="reset-btn">Reiniciar Partida</button>
+        </div>
+    </div>
+    <div id="promotion-modal" class="promotion-modal hidden" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
+        <div class="promotion-dialog">
+            <h2 id="promotion-title">Elige una pieza</h2>
+            <div class="promotion-options">
+                <button type="button" data-promotion="q">Dama</button>
+                <button type="button" data-promotion="r">Torre</button>
+                <button type="button" data-promotion="b">Alfil</button>
+                <button type="button" data-promotion="n">Caballo</button>
+            </div>
+            <button id="cancel-promotion" type="button">Cancelar</button>
+        </div>
+    </div>
+    <div id="result-modal" class="result-modal hidden" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-summary">
+        <div class="result-dialog">
+            <h2 id="result-title">Partida finalizada</h2>
+            <p id="result-summary" class="result-summary"></p>
+            <dl class="result-details">
+                <div>
+                    <dt>Resultado</dt>
+                    <dd id="result-code"></dd>
+                </div>
+                <div>
+                    <dt>Ganador</dt>
+                    <dd id="result-winner"></dd>
+                </div>
+                <div>
+                    <dt>Perdedor</dt>
+                    <dd id="result-loser"></dd>
+                </div>
+                <div>
+                    <dt>Motivo</dt>
+                    <dd id="result-reason"></dd>
+                </div>
+            </dl>
+            <div class="result-actions">
+                <button id="review-position" type="button">Revisar posición</button>
+                <button id="new-game" type="button">Nueva partida</button>
+            </div>
+        </div>
+    </div>
+    <script src="vendor/chess.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
