@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pruebas técnicas de Dragon Board</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #bbb; padding: 0.5rem; text-align: left; }
+        .pass { color: #08752b; }
+        .fail { color: #b00020; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Pruebas técnicas de Dragon Board</h1>
+    <p id="test-summary">Ejecutando…</p>
+    <table>
+        <thead>
+            <tr><th>Prueba</th><th>Estado</th><th>Detalle</th></tr>
+        </thead>
+        <tbody id="test-results"></tbody>
+    </table>
+
+    <!-- DOM mínimo exigido por script.js; no forma parte de la aplicación. -->
+    <div id="fixture" hidden>
+        <div id="chessboard"></div>
+        <div id="moves-list"></div>
+        <p id="game-status"></p>
+        <input id="fen-output">
+        <textarea id="pgn-output"></textarea>
+        <button id="reset-btn">Reiniciar Partida</button>
+
+        <div id="promotion-modal" class="hidden">
+            <button data-promotion="q">Dama</button>
+            <button data-promotion="r">Torre</button>
+            <button data-promotion="b">Alfil</button>
+            <button data-promotion="n">Caballo</button>
+            <button id="cancel-promotion">Cancelar</button>
+        </div>
+
+        <div id="result-modal" class="hidden">
+            <p id="result-summary"></p>
+            <span id="result-code"></span>
+            <span id="result-winner"></span>
+            <span id="result-loser"></span>
+            <span id="result-reason"></span>
+            <button id="review-position">Revisar posición</button>
+            <button id="new-game">Nueva partida</button>
+        </div>
+    </div>
+
+    <script src="../vendor/chess.js"></script>
+    <script src="../script.js"></script>
+    <script src="technical-tests.js"></script>
+</body>
+</html>

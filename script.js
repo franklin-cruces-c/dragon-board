@@ -308,6 +308,15 @@ function resetGame() {
     game.reset();
     closePromotionSelector();
     closeResultModal();
+    [
+        'result-summary',
+        'result-code',
+        'result-winner',
+        'result-loser',
+        'result-reason'
+    ].forEach((id) => {
+        document.getElementById(id).textContent = '';
+    });
     resultModalShown = false;
     clearSelection();
     updateInterface();
