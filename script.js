@@ -1,23 +1,91 @@
-const pieces = {
-    w: {
-        k: '♔',
-        q: '♕',
-        r: '♖',
-        b: '♗',
-        n: '♘',
-        p: '♙'
+const PIECE_SYMBOLS = {
+    solid: {
+        w: {
+            k: '♚',
+            q: '♛',
+            r: '♜',
+            b: '♝',
+            n: '♞',
+            p: '♟'
+        },
+        b: {
+            k: '♚',
+            q: '♛',
+            r: '♜',
+            b: '♝',
+            n: '♞',
+            p: '♟'
+        }
     },
-    b: {
-        k: '♚',
-        q: '♛',
-        r: '♜',
-        b: '♝',
-        n: '♞',
-        p: '♟'
+    outline: {
+        w: {
+            k: '♔',
+            q: '♕',
+            r: '♖',
+            b: '♗',
+            n: '♘',
+            p: '♙'
+        },
+        b: {
+            k: '♚',
+            q: '♛',
+            r: '♜',
+            b: '♝',
+            n: '♞',
+            p: '♟'
+        }
     }
 };
 
+const DEFAULT_PIECE_STYLE = 'solid';
+const PIECE_STYLE_STORAGE_KEY = 'dragon-board.piece-style.v1';
+const PIECE_STYLE_STORAGE_VERSION = 1;
+
+function isValidPieceStyle(pieceStyle) {
+    return Object.hasOwn(PIECE_SYMBOLS, pieceStyle);
+}
+
+function loadPieceStyle(storage) {
+    try {
+        const targetStorage = storage || window.localStorage;
+        const storedValue = targetStorage.getItem(PIECE_STYLE_STORAGE_KEY);
+        if (!storedValue) {
+            return DEFAULT_PIECE_STYLE;
+        }
+
+        const parsedValue = JSON.parse(storedValue);
+        if (
+            parsedValue?.version !== PIECE_STYLE_STORAGE_VERSION ||
+            !isValidPieceStyle(parsedValue.pieceStyle)
+        ) {
+            return DEFAULT_PIECE_STYLE;
+        }
+
+        return parsedValue.pieceStyle;
+    } catch {
+        return DEFAULT_PIECE_STYLE;
+    }
+}
+
+function persistPieceStyle(pieceStyle, storage) {
+    try {
+        const targetStorage = storage || window.localStorage;
+        targetStorage.setItem(PIECE_STYLE_STORAGE_KEY, JSON.stringify({
+            version: PIECE_STYLE_STORAGE_VERSION,
+            pieceStyle
+        }));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 const game = new window.Chess();
+const gameData = {
+    fen: game.fen(),
+    pgn: game.pgn()
+};
+let activePieceStyle = loadPieceStyle();
 let selectedSquare = null;
 let legalMoves = [];
 let pendingPromotion = null;
@@ -41,7 +109,11 @@ function createBoard() {
             square.tabIndex = 0;
 
             if (piece) {
-                square.textContent = pieces[piece.color][piece.type];
+                const pieceElement = document.createElement('span');
+                pieceElement.className = `piece ${piece.color === 'w' ? 'white' : 'black'}`;
+                pieceElement.textContent = PIECE_SYMBOLS[activePieceStyle][piece.color][piece.type];
+                pieceElement.setAttribute('aria-hidden', 'true');
+                square.appendChild(pieceElement);
                 square.dataset.piece = piece.type;
                 square.dataset.color = piece.color;
             }
@@ -53,6 +125,40 @@ function createBoard() {
     });
 
     highlightCheckedKing();
+    renderPromotionOptions();
+}
+
+function renderPieceSymbols() {
+    document.querySelectorAll('.square[data-piece][data-color]').forEach((square) => {
+        const pieceElement = square.querySelector('.piece');
+        if (pieceElement) {
+            pieceElement.textContent =
+                PIECE_SYMBOLS[activePieceStyle][square.dataset.color][square.dataset.piece];
+        }
+    });
+}
+
+function renderPromotionOptions() {
+    const promotionColor = game.turn();
+    document.querySelectorAll('[data-promotion-symbol]').forEach((symbol) => {
+        const pieceType = symbol.closest('[data-promotion]')?.dataset.promotion;
+        if (pieceType) {
+            symbol.textContent = PIECE_SYMBOLS[activePieceStyle][promotionColor][pieceType];
+            symbol.className = `piece ${promotionColor === 'w' ? 'white' : 'black'}`;
+        }
+    });
+}
+
+function setPieceStyle(pieceStyle, { persist = true, storage } = {}) {
+    if (!isValidPieceStyle(pieceStyle)) {
+        return false;
+    }
+
+    activePieceStyle = pieceStyle;
+    renderPieceSymbols();
+    renderPromotionOptions();
+
+    return persist ? persistPieceStyle(pieceStyle, storage) : true;
 }
 
 function highlightCheckedKing() {
@@ -133,12 +239,14 @@ function clearSelection() {
 
 function makeMove(move) {
     try {
-        game.move(move);
+        const acceptedMove = game.move(move);
         clearSelection();
         updateInterface();
+        return acceptedMove;
     } catch (error) {
         clearSelection();
         updateStatus('Movimiento no válido.');
+        return null;
     }
 }
 
@@ -293,8 +401,8 @@ function handleResultModalKeydown(event) {
 
 function updateStatus(overrideMessage) {
     document.getElementById('game-status').textContent = overrideMessage || getGameStatus();
-    document.getElementById('fen-output').value = game.fen();
-    document.getElementById('pgn-output').value = game.pgn();
+    gameData.fen = game.fen();
+    gameData.pgn = game.pgn();
 }
 
 function updateInterface() {

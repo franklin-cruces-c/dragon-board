@@ -12,11 +12,21 @@ Aplicación web de ajedrez presencial para dos jugadores en el mismo dispositivo
 - Detectar jaque, mate, ahogado, repetición, regla de 50 movimientos y material insuficiente.
 - Bloquear movimientos y mantener la posición cuando termine la partida.
 - Mostrar historial SAN con número, blancas y negras en una fila.
-- Generar FEN y PGN.
-- Reiniciar completamente la partida.
+- Evolucionar el historial a cinco columnas: número, jugada blanca, tiempo
+  consumido por blancas, jugada negra y tiempo consumido por negras.
+- Generar y actualizar internamente FEN y PGN sin mostrarlos permanentemente en
+  la interfaz principal.
+- Iniciar una “Nueva partida” que limpie completamente todo el estado anterior.
 - Incorporar dos relojes configurables con incremento, pausa y tiempo por jugada.
+- Mostrar en todo momento el tiempo restante de blancas y negras.
+- Registrar independientemente el tiempo exacto consumido por cada jugada blanca y negra.
+- Finalizar la partida por caída de bandera.
 - Exportar PGN, FEN y CSV.
+- Incorporar en una etapa futura “Abrir en Lichess” para trasladar la posición o partida al análisis sin backend.
 - Funcionar en escritorio y móvil.
+- Usar por defecto piezas Unicode sólidas cuyo color visual dependa del bando.
+- Permitir alternativamente piezas blancas huecas clásicas, conservando negras sólidas.
+- Persistir únicamente la preferencia de estilo de piezas en `localStorage`.
 
 ## Finalización visual
 
@@ -47,7 +57,9 @@ Aplicación web de ajedrez presencial para dos jugadores en el mismo dispositivo
 - Gestionar el foco y usar `role="dialog"`, `aria-modal="true"` y título asociado.
 - No utilizar `alert()`, `confirm()` ni `prompt()` para el resultado.
 - Cerrar no modifica tablero, historial ni resaltado.
-- Nueva partida limpia tablero, chess.js, historial, estado, resultado, selección, modal, FEN, PGN y, cuando existan, relojes.
+- “Nueva partida” debe usarse de forma consistente en la interfaz, el modal y la documentación.
+- Nueva partida limpia tablero, chess.js, historial, estado, resultado, selección,
+  resaltados, promoción pendiente, modal, FEN, PGN, relojes y tiempos por jugada.
 - La finalización debe poder ampliarse a tiempo, abandono y acuerdo de tablas.
 
 ## Requisitos técnicos
@@ -60,14 +72,44 @@ Aplicación web de ajedrez presencial para dos jugadores en el mismo dispositivo
 - Dependencias adicionales solo si aportan una mejora real.
 - Exportaciones en el navegador mediante `Blob`.
 - Relojes basados en `performance.now()`.
+- No existe un botón “Iniciar” para los relojes.
+- Al abrir o iniciar una nueva partida, ambos relojes permanecen preparados y detenidos.
+- El reloj blanco comienza con la primera selección válida de una pieza blanca
+  propia que tenga al menos un movimiento legal.
+- La primera jugada blanca se mide desde esa selección hasta que chess.js acepta
+  el movimiento; después se descuenta su tiempo, se aplica el incremento y
+  comienza el reloj negro.
+- Los turnos posteriores se miden desde el movimiento legal del rival hasta que
+  chess.js acepta el movimiento propio.
+- Las pausas quedan excluidas del tiempo consumido.
+- El incremento se aplica una sola vez después de cada movimiento legal.
+- El cálculo del tiempo restante debe derivarse de marcas temporales monotónicas,
+  no de acumular intervalos, para conservar precisión al cambiar de pestaña o
+  bloquearse la pantalla.
+- Cada media jugada conserva internamente número, color, SAN, origen, destino,
+  pieza, captura, promoción y FEN resultante como estructura base. La etapa de
+  relojes completa esa estructura con tiempo consumido, tiempo restante e
+  incremento aplicado.
+- “Abrir en Lichess” deberá conservar el funcionamiento estático y no se
+  implementará hasta proponer y aprobar el mecanismo concreto.
+- Los estilos internos de piezas admitidos son `solid` y `outline`; cualquier
+  preferencia ausente, inválida o ilegible recupera `solid`.
+- El cambio de estilo vuelve a representar tablero y promoción sin alterar
+  posición, SAN, FEN, PGN, historial, selección, resaltados ni resultado.
+- La interfaz visible para elegir el estilo se incorporará posteriormente al
+  modal de configuración, sin crear un modal temporal independiente.
 - Código legible, organizado y mantenible.
 
 ## Experiencia de usuario
 
 - Uso rápido y sencillo durante una partida presencial.
 - Botones claros, grandes y adaptables.
+- Usar “Nueva partida”, no “Reiniciar Partida”, para la acción que comienza desde cero.
 - Turno, jaque y finalización visibles.
 - Historial fácil de leer.
+- FEN y PGN no ocupan espacio permanente durante la partida; se ofrecerán
+  posteriormente mediante acciones compactas de exportación o copia.
+- Relojes, configuración y controles utilizables en móvil y mediante interacción táctil.
 - Modal legible en escritorio y móvil.
 - Confirmación antes de futuras acciones destructivas.
 
@@ -87,6 +129,21 @@ El MVP estará terminado cuando:
 - El historial guarde los datos completos de cada media jugada.
 - Los dos relojes funcionen con incremento, pausa y caída de bandera.
 - PGN, FEN y CSV puedan descargarse sin servidor.
-- Reiniciar limpie todo el estado de la partida.
+- Nueva partida limpia todo el estado de la partida.
 - La interfaz sea utilizable con ratón, teclado y pantalla móvil.
 - Las pruebas de reglas, tiempo, accesibilidad, `file://` y GitHub Pages resulten satisfactorias.
+
+## Estrategia de validación
+
+- Las reglas, SAN, FEN y PGN internos, finales, bloqueo y reinicio se validan mediante
+  pruebas técnicas reproducibles separadas del código de producción.
+- Las pruebas visuales se registran por separado y requieren confirmación
+  expresa o evidencia aportada por el usuario.
+- Las pruebas visuales pendientes no bloquean el avance funcional, pero deben
+  completarse antes de considerar terminado el MVP.
+- Ninguna prueba visual se marca como superada sin confirmación o captura.
+- La publicación en GitHub Pages y el acceso desde móvil son hechos operativos
+  confirmados; no sustituyen la validación visual formal con evidencias.
+- El diseño adaptable implementado se distingue de su validación visual en
+  dispositivos concretos.
+- El estado y las evidencias se mantienen en `PRUEBAS.md`.

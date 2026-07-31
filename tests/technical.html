@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pruebas técnicas de Dragon Board</title>
+    <link rel="stylesheet" href="../style.css">
     <style>
         body { font-family: system-ui, sans-serif; margin: 2rem; }
         table { border-collapse: collapse; width: 100%; }
@@ -24,23 +25,22 @@
     </table>
 
     <!-- DOM mínimo exigido por script.js; no forma parte de la aplicación. -->
-    <div id="fixture" hidden>
+    <div id="fixture" style="position: fixed; left: -10000px; top: 0;">
         <div id="chessboard"></div>
         <div id="moves-list"></div>
         <p id="game-status"></p>
-        <input id="fen-output">
-        <textarea id="pgn-output"></textarea>
-        <button id="reset-btn">Reiniciar Partida</button>
+        <button id="reset-btn">Nueva partida</button>
 
         <div id="promotion-modal" class="hidden">
-            <button data-promotion="q">Dama</button>
-            <button data-promotion="r">Torre</button>
-            <button data-promotion="b">Alfil</button>
-            <button data-promotion="n">Caballo</button>
+            <button data-promotion="q"><span data-promotion-symbol></span><span>Dama</span></button>
+            <button data-promotion="r"><span data-promotion-symbol></span><span>Torre</span></button>
+            <button data-promotion="b"><span data-promotion-symbol></span><span>Alfil</span></button>
+            <button data-promotion="n"><span data-promotion-symbol></span><span>Caballo</span></button>
             <button id="cancel-promotion">Cancelar</button>
         </div>
 
-        <div id="result-modal" class="hidden">
+        <div id="result-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-summary">
+            <h2 id="result-title">Partida finalizada</h2>
             <p id="result-summary"></p>
             <span id="result-code"></span>
             <span id="result-winner"></span>

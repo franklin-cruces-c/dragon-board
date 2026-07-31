@@ -1,4 +1,6 @@
-/* global Chess, game, makeMove, resetGame, updateInterface */
+/* global Chess, PIECE_SYMBOLS, PIECE_STYLE_STORAGE_KEY, activePieceStyle, game,
+gameData, loadPieceStyle, makeMove, persistPieceStyle, resetGame, resultModalShown,
+setPieceStyle, updateInterface */
 
 (() => {
     'use strict';
@@ -19,6 +21,11 @@
 
     function play(chess, moves) {
         return moves.map((move) => chess.move(move));
+    }
+
+    function clickMove(from, to) {
+        document.querySelector(`[data-square="${from}"]`).click();
+        document.querySelector(`[data-square="${to}"]`).click();
     }
 
     function test(name, callback) {
@@ -114,6 +121,21 @@
             );
         });
 
+        test('FEN y PGN internos', () => {
+            resetGame();
+            equal(gameData.fen, game.fen(), 'FEN inicial interno');
+            equal(gameData.pgn, game.pgn(), 'PGN inicial interno');
+            makeMove({ from: 'e2', to: 'e4' });
+            equal(gameData.fen, game.fen(), 'FEN interno después de e4');
+            equal(gameData.pgn, game.pgn(), 'PGN interno después de e4');
+            assert(gameData.pgn.includes('1. e4'), 'el PGN interno no contiene e4');
+        });
+
+        test('FEN y PGN fuera de la vista principal', () => {
+            assert(!document.getElementById('fen-output'), 'existe un campo FEN en el DOM');
+            assert(!document.getElementById('pgn-output'), 'existe un campo PGN en el DOM');
+        });
+
         test('Enroque corto', () => {
             const chess = new Chess();
             play(chess, ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5']);
@@ -180,6 +202,91 @@
             assert(chess.isGameOver(), 'la partida no consta como finalizada');
         });
 
+        test('Regresión de jaque mate, SAN y modal', () => {
+            resetGame();
+            clickMove('f2', 'f3');
+            clickMove('e7', 'e5');
+            clickMove('g2', 'g4');
+            clickMove('d8', 'h4');
+
+            const finalFen = game.fen();
+            const finalHistory = game.history();
+            const resultModal = document.getElementById('result-modal');
+            const defeatedKing = document.querySelector('[data-square="e1"]');
+            const blackHistoryCell = [...document.querySelectorAll('.move-black')].at(-1);
+
+            assert(game.isCheckmate(), 'chess.js no detectó el mate');
+            equal(finalHistory.at(-1), 'Qh4#', 'última SAN del motor');
+            equal(blackHistoryCell.textContent, 'Qh4#', 'SAN visible del historial');
+            assert(!resultModal.classList.contains('hidden'), 'el modal no quedó visible');
+            assert(resultModalShown, 'el indicador interno del modal no quedó activo');
+            equal(document.getElementById('result-code').textContent, '0-1', 'resultado');
+            equal(document.getElementById('result-reason').textContent, 'Jaque mate', 'motivo');
+            assert(document.getElementById('result-winner').textContent.includes('Negras'), 'ganador');
+            assert(document.getElementById('result-loser').textContent.includes('Blancas'), 'perdedor');
+            assert(defeatedKing.classList.contains('in-checkmate'), 'rey derrotado sin resaltado');
+
+            setPieceStyle('outline', { persist: false });
+            assert(game.isCheckmate(), 'el estilo alteró el estado de mate');
+            assert(defeatedKing.classList.contains('in-checkmate'), 'el estilo eliminó el resaltado de mate');
+            assert(!resultModal.classList.contains('hidden'), 'el estilo ocultó el modal');
+            equal(game.history().at(-1), 'Qh4#', 'el estilo alteró la SAN de mate');
+            setPieceStyle('solid', { persist: false });
+
+            document.querySelector('[data-square="e2"]').click();
+            equal(game.fen(), finalFen, 'FEN tras intentar mover en mate');
+            equal(game.history().join(' '), finalHistory.join(' '), 'historial tras intentar mover en mate');
+
+            document.getElementById('review-position').click();
+            assert(resultModal.classList.contains('hidden'), 'Revisar posición no cerró el modal');
+            equal(game.fen(), finalFen, 'FEN después de revisar');
+            equal(game.history().join(' '), finalHistory.join(' '), 'historial después de revisar');
+            assert(
+                document.querySelector('[data-square="e1"]').classList.contains('in-checkmate'),
+                'se perdió el resaltado después de revisar'
+            );
+            equal(document.getElementById('result-code').textContent, '0-1', 'resultado interno después de revisar');
+
+            updateInterface();
+            assert(resultModal.classList.contains('hidden'), 'el modal se abrió por segunda vez');
+
+            document.getElementById('new-game').click();
+            assert(resultModal.classList.contains('hidden'), 'Nueva partida dejó el modal visible');
+            assert(!resultModalShown, 'Nueva partida no restableció el indicador del modal');
+            equal(game.fen(), new Chess().fen(), 'posición después de Nueva partida');
+            equal(game.history().length, 0, 'historial después de Nueva partida');
+            for (const id of ['result-summary', 'result-code', 'result-winner', 'result-loser', 'result-reason']) {
+                equal(document.getElementById(id).textContent, '', `contenido residual en ${id}`);
+            }
+        });
+
+        test('Accesibilidad y cierre con Escape del modal de mate', () => {
+            resetGame();
+            clickMove('f2', 'f3');
+            clickMove('e7', 'e5');
+            clickMove('g2', 'g4');
+            clickMove('d8', 'h4');
+
+            const resultModal = document.getElementById('result-modal');
+            equal(resultModal.getAttribute('role'), 'dialog', 'role del modal');
+            equal(resultModal.getAttribute('aria-modal'), 'true', 'aria-modal');
+            equal(resultModal.getAttribute('aria-labelledby'), 'result-title', 'título asociado');
+            equal(document.activeElement.id, 'review-position', 'foco inicial del modal');
+
+            document.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'Escape',
+                bubbles: true
+            }));
+            assert(resultModal.classList.contains('hidden'), 'Escape no cerró el modal');
+            assert(game.isCheckmate(), 'Escape modificó el resultado');
+            equal(game.history().at(-1), 'Qh4#', 'Escape modificó la SAN');
+            assert(
+                document.querySelector('[data-square="e1"]').classList.contains('in-checkmate'),
+                'Escape eliminó el resaltado'
+            );
+            resetGame();
+        });
+
         test('Ahogado', () => {
             const chess = new Chess('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
             assert(chess.isStalemate(), 'no se detectó el ahogado');
@@ -230,6 +337,115 @@
             assert(!square.classList.contains('selected'), 'se permitió seleccionar una pieza');
         });
 
+        test('Elementos DOM de las piezas', () => {
+            setPieceStyle('solid', { persist: false });
+            resetGame();
+            equal(document.querySelectorAll('#chessboard .piece').length, 32, 'total de piezas');
+            equal(document.querySelectorAll('#chessboard .piece.white').length, 16, 'piezas blancas');
+            equal(document.querySelectorAll('#chessboard .piece.black').length, 16, 'piezas negras');
+            document.querySelectorAll('#chessboard .piece.white').forEach((piece) => {
+                assert(piece.closest('.square')?.dataset.color === 'w', 'pieza blanca en casilla mal identificada');
+            });
+            const whitePiece = document.querySelector('#chessboard .piece.white');
+            const blackPiece = document.querySelector('#chessboard .piece.black');
+            equal(getComputedStyle(whitePiece).opacity, '1', 'opacidad de pieza blanca');
+            assert(
+                getComputedStyle(whitePiece).color !== getComputedStyle(blackPiece).color,
+                'blancas y negras usan el mismo color'
+            );
+            assert(
+                !whitePiece.classList.contains('light') && !whitePiece.classList.contains('dark'),
+                'el color de pieza se confundió con el color de casilla'
+            );
+            equal(document.querySelector('[data-square="e1"] .piece').textContent, '♚', 'rey blanco sólido');
+            equal(document.querySelector('[data-square="e8"] .piece').textContent, '♚', 'rey negro sólido');
+        });
+
+        test('Estilo sólido predeterminado y datos inválidos', () => {
+            const emptyStorage = { getItem: () => null };
+            equal(loadPieceStyle(emptyStorage), 'solid', 'estilo sin preferencia');
+
+            const invalidValues = [
+                '{',
+                '{}',
+                '{"version":2,"pieceStyle":"outline"}',
+                '{"version":1,"pieceStyle":"unknown"}'
+            ];
+            invalidValues.forEach((storedValue) => {
+                equal(
+                    loadPieceStyle({ getItem: () => storedValue }),
+                    'solid',
+                    `recuperación para ${storedValue}`
+                );
+            });
+            equal(
+                loadPieceStyle({ getItem: () => { throw new Error('storage bloqueado'); } }),
+                'solid',
+                'excepción de lectura'
+            );
+        });
+
+        test('Cambio a piezas huecas sin alterar la partida', () => {
+            setPieceStyle('solid', { persist: false });
+            resetGame();
+            makeMove({ from: 'e2', to: 'e4' });
+            makeMove({ from: 'e7', to: 'e5' });
+            document.querySelector('[data-square="g1"]').click();
+
+            const fenBefore = gameData.fen;
+            const pgnBefore = gameData.pgn;
+            const historyBefore = game.history().join(' ');
+
+            assert(setPieceStyle('outline', { persist: false }), 'no se aceptó outline');
+            equal(activePieceStyle, 'outline', 'estilo activo');
+            equal(document.querySelector('[data-square="e1"] .piece').textContent, '♔', 'rey blanco hueco');
+            equal(document.querySelector('[data-square="e8"] .piece').textContent, '♚', 'rey negro en outline');
+            equal(gameData.fen, fenBefore, 'FEN después del cambio');
+            equal(gameData.pgn, pgnBefore, 'PGN después del cambio');
+            equal(game.history().join(' '), historyBefore, 'historial después del cambio');
+            assert(document.querySelector('[data-square="g1"]').classList.contains('selected'), 'se perdió la selección');
+            equal(
+                document.querySelector('[data-promotion="q"] [data-promotion-symbol]').textContent,
+                '♕',
+                'símbolo de promoción'
+            );
+
+            resetGame();
+            equal(activePieceStyle, 'outline', 'Nueva partida cambió la preferencia');
+            equal(document.querySelector('[data-square="e1"] .piece').textContent, '♔', 'Nueva partida perdió outline');
+        });
+
+        test('Persistencia del estilo de piezas', () => {
+            let storedValue = null;
+            const storage = {
+                getItem: (key) => key === PIECE_STYLE_STORAGE_KEY ? storedValue : null,
+                setItem: (key, value) => {
+                    if (key === PIECE_STYLE_STORAGE_KEY) {
+                        storedValue = value;
+                    }
+                }
+            };
+
+            assert(setPieceStyle('outline', { storage }), 'no se persistió outline');
+            equal(loadPieceStyle(storage), 'outline', 'recuperación de outline');
+            assert(setPieceStyle('solid', { storage }), 'no se persistió solid');
+            equal(loadPieceStyle(storage), 'solid', 'último estilo válido');
+        });
+
+        test('Fallo de escritura no rompe el estilo de la sesión', () => {
+            const throwingStorage = {
+                setItem: () => {
+                    throw new Error('storage bloqueado');
+                }
+            };
+            assert(!persistPieceStyle('outline', throwingStorage), 'la escritura fallida se marcó como correcta');
+            assert(!setPieceStyle('outline', { storage: throwingStorage }), 'setPieceStyle ocultó el fallo');
+            equal(activePieceStyle, 'outline', 'el estilo válido no se aplicó en la sesión');
+            equal(document.querySelector('[data-square="e1"] .piece').textContent, '♔', 'símbolo tras fallo');
+            assert(!setPieceStyle('invalid', { persist: false }), 'se aceptó un estilo inválido');
+            equal(activePieceStyle, 'outline', 'un valor inválido alteró el estilo');
+        });
+
         test('Reinicio completo', () => {
             resetGame();
             makeMove({ from: 'f2', to: 'f3' });
@@ -244,7 +460,8 @@
             equal(game.fen(), new Chess().fen(), 'FEN inicial');
             equal(game.history().length, 0, 'historial del motor');
             equal(document.getElementById('moves-list').children.length, 0, 'historial visual');
-            equal(document.getElementById('pgn-output').value, new Chess().pgn(), 'PGN inicial');
+            equal(gameData.fen, new Chess().fen(), 'FEN interno inicial');
+            equal(gameData.pgn, new Chess().pgn(), 'PGN interno inicial');
             assert(document.getElementById('result-modal').classList.contains('hidden'), 'modal de resultado abierto');
             assert(document.getElementById('promotion-modal').classList.contains('hidden'), 'modal de promoción abierto');
             for (const id of ['result-summary', 'result-code', 'result-winner', 'result-loser', 'result-reason']) {

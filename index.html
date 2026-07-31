@@ -10,34 +10,34 @@
     <div class="container">
         <h1>Tablero de Ajedrez</h1>
         <div class="game-info">
-            <div class="board-container">
-                <div id="chessboard"></div>
-            </div>
+            <section class="board-section" aria-label="Tablero y controles">
+                <div class="board-container">
+                    <div id="chessboard"></div>
+                </div>
+                <div class="controls">
+                    <button id="reset-btn">Nueva partida</button>
+                </div>
+            </section>
             <div class="moves-container">
-                <h2>Jugadas</h2>
-                <div id="moves-list"></div>
-                <section class="game-state" aria-labelledby="state-title">
+                <section class="game-state status-panel" aria-labelledby="state-title">
                     <h2 id="state-title">Estado de la partida</h2>
                     <p id="game-status" aria-live="polite"></p>
-                    <label for="fen-output">FEN</label>
-                    <input id="fen-output" type="text" readonly>
-                    <label for="pgn-output">PGN</label>
-                    <textarea id="pgn-output" rows="4" readonly></textarea>
+                </section>
+                <section class="history-panel" aria-labelledby="moves-title">
+                    <h2 id="moves-title">Jugadas</h2>
+                    <div id="moves-list"></div>
                 </section>
             </div>
-        </div>
-        <div class="controls">
-            <button id="reset-btn">Reiniciar Partida</button>
         </div>
     </div>
     <div id="promotion-modal" class="promotion-modal hidden" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
         <div class="promotion-dialog">
             <h2 id="promotion-title">Elige una pieza</h2>
             <div class="promotion-options">
-                <button type="button" data-promotion="q">Dama</button>
-                <button type="button" data-promotion="r">Torre</button>
-                <button type="button" data-promotion="b">Alfil</button>
-                <button type="button" data-promotion="n">Caballo</button>
+                <button type="button" data-promotion="q"><span data-promotion-symbol aria-hidden="true"></span><span>Dama</span></button>
+                <button type="button" data-promotion="r"><span data-promotion-symbol aria-hidden="true"></span><span>Torre</span></button>
+                <button type="button" data-promotion="b"><span data-promotion-symbol aria-hidden="true"></span><span>Alfil</span></button>
+                <button type="button" data-promotion="n"><span data-promotion-symbol aria-hidden="true"></span><span>Caballo</span></button>
             </div>
             <button id="cancel-promotion" type="button">Cancelar</button>
         </div>
