@@ -26,8 +26,8 @@ directamente mediante `file://` en Chromium.
 ### Última ejecución
 
 - Entorno: Chromium headless, aplicación abierta mediante `file://`.
-- Total: 28.
-- PASAN: 28.
+- Total: 46.
+- PASAN: 46.
 - FALLAN: 0.
 - NO EJECUTABLES: 0.
 
@@ -61,6 +61,24 @@ directamente mediante `file://` en Chromium.
 | Persistencia del estilo de piezas | PASA |
 | Fallo de escritura sin romper la sesión | PASA |
 | Reinicio completo | PASA |
+| Reloj preparado 10+5 | PASA |
+| Inicio automático solo con selección blanca válida | PASA |
+| Descuento, incremento Fischer y cambio de turno | PASA |
+| Intento ilegal no cambia el reloj | PASA |
+| Pausa y reanudación excluyen tiempo pausado | PASA |
+| Protección ante suspensión del navegador | PASA |
+| Configuración ausente o inválida recupera 10+5 | PASA |
+| Persistencia unificada y última configuración válida | PASA |
+| Aplicar configuración y conservarla en Nueva partida | PASA |
+| Destinos posibles deshabilitados por defecto | PASA |
+| Registro estructurado e historial de cinco columnas | PASA |
+| Bloqueo durante pausa | PASA |
+| Mate detiene relojes y habilita Lichess | PASA |
+| Posibilidad de mate tras bandera: casos exactos | PASA |
+| Posibilidad de mate: certificado y resolución arbitral | PASA |
+| Posibilidad de mate: material y casos límite | PASA |
+| Caída de bandera indeterminada solicita resolución arbitral | PASA |
+| URL de Lichess con PGN completo codificado | PASA |
 
 ### Corrección verificada
 
@@ -71,7 +89,9 @@ corrección, la batería completa obtuvo 19 de 19 pruebas superadas. La posterio
 actualización visual añadió tres pruebas sobre FEN y PGN internos, su retirada
 de la vista principal y los elementos DOM de las piezas. La batería actual
 añade además regresión completa de mate, accesibilidad del modal, estilos de
-piezas y persistencia. Obtiene 28 de 28 pruebas superadas.
+piezas y persistencia. La etapa de relojes añade dieciocho pruebas sobre
+inicio automático, medición, incremento, pausas, suspensión, configuración,
+historial, caída de bandera y Lichess. Obtiene 46 de 46 pruebas superadas.
 
 ## Pruebas visuales pendientes
 
@@ -101,6 +121,12 @@ hasta recibir confirmación expresa o una captura del usuario.
 | V-19 | Contraste del estilo sólido | PENDIENTE | — | — | — | — | — |
 | V-20 | Contraste del estilo hueco | PENDIENTE | — | — | — | — | — |
 | V-21 | Selector de promoción en ambos estilos | PENDIENTE | — | — | — | — | — |
+| V-22 | Legibilidad y estado activo de ambos relojes | PENDIENTE | — | — | — | — | — |
+| V-23 | Modal de configuración en móvil | PENDIENTE | — | — | — | — | — |
+| V-24 | Historial de cinco columnas en móvil | PENDIENTE | — | — | — | — | — |
+| V-25 | Pausa, reanudación y caída de bandera visibles | PENDIENTE | — | — | — | — | — |
+| V-26 | Modal de resultado por tiempo y resolución arbitral | PENDIENTE | — | — | — | — | — |
+| V-27 | Apertura de la partida finalizada en Lichess | PENDIENTE | — | — | — | — | — |
 
 ## Registro de evidencias
 

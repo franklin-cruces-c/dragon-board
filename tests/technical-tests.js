@@ -1,6 +1,8 @@
-/* global Chess, PIECE_SYMBOLS, PIECE_STYLE_STORAGE_KEY, activePieceStyle, game,
-gameData, loadPieceStyle, makeMove, persistPieceStyle, resetGame, resultModalShown,
-setPieceStyle, updateInterface */
+/* global Chess, ClockManager, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY,
+PIECE_SYMBOLS, PIECE_STYLE_STORAGE_KEY, activePieceStyle, assessMatingPossibility,
+buildLichessUrl, clock, game, gameData, loadPieceStyle, loadSettings, makeMove,
+handleTimeout, moveRecords, pauseOrResume, persistPieceStyle, persistSettings, resetGame,
+resultModalShown, setPieceStyle, settings, updateInterface */
 
 (() => {
     'use strict';
@@ -470,6 +472,225 @@ setPieceStyle, updateInterface */
             assert(!document.querySelector('.selected, .valid-move, .in-check, .in-checkmate'), 'quedaron resaltados');
             equal(document.querySelectorAll('#chessboard .square').length, 64, 'casillas del tablero');
             equal(document.getElementById('game-status').textContent, 'Turno de blancas.', 'estado');
+        });
+
+        test('Reloj preparado 10+5', () => {
+            const timer = new ClockManager(DEFAULT_SETTINGS, {
+                now: () => 100,
+                wallNow: () => 100
+            });
+            equal(timer.phase, 'ready', 'fase inicial');
+            equal(timer.getRemaining('w'), 600000, 'tiempo blanco');
+            equal(timer.getRemaining('b'), 600000, 'tiempo negro');
+            equal(DEFAULT_SETTINGS.incrementMs, 5000, 'incremento');
+        });
+
+        test('Inicio automático solo con selección blanca válida', () => {
+            resetGame();
+            document.querySelector('[data-square="e7"]').click();
+            equal(clock.phase, 'ready', 'selección negra');
+            document.querySelector('[data-square="e4"]').click();
+            equal(clock.phase, 'ready', 'casilla vacía');
+            document.querySelector('[data-square="e2"]').click();
+            equal(clock.phase, 'running', 'selección blanca válida');
+            equal(clock.activeColor, 'w', 'reloj activo');
+        });
+
+        test('Descuento, incremento Fischer y cambio de turno', () => {
+            let monotonic = 0;
+            let wall = 0;
+            const timer = new ClockManager({ initialMs: 10000, incrementMs: 2000 }, {
+                now: () => monotonic,
+                wallNow: () => wall
+            });
+            timer.startFirstTurn();
+            monotonic = 3000;
+            wall = 3000;
+            const completion = timer.completeTurn('w');
+            equal(completion.consumedMs, 3000, 'tiempo consumido');
+            equal(completion.remainingMs, 9000, 'restante después del incremento');
+            equal(timer.activeColor, 'b', 'turno activo siguiente');
+        });
+
+        test('Intento ilegal no cambia el reloj', () => {
+            resetGame();
+            document.querySelector('[data-square="e2"]').click();
+            const activeBefore = clock.activeColor;
+            document.querySelector('[data-square="e5"]').click();
+            equal(clock.activeColor, activeBefore, 'color activo');
+            equal(game.history().length, 0, 'historial');
+            equal(moveRecords.length, 0, 'registros');
+        });
+
+        test('Pausa y reanudación excluyen tiempo pausado', () => {
+            let monotonic = 0;
+            let wall = 0;
+            const timer = new ClockManager({ initialMs: 10000, incrementMs: 0 }, {
+                now: () => monotonic,
+                wallNow: () => wall
+            });
+            timer.startFirstTurn();
+            monotonic = wall = 1200;
+            timer.pause();
+            monotonic = wall = 8200;
+            timer.resume();
+            monotonic = wall = 9000;
+            equal(timer.consumedMs(), 2000, 'tiempo activo acumulado');
+            timer.completeTurn('w');
+            equal(timer.getRemaining('w'), 8000, 'restante');
+        });
+
+        test('Suspensión usa protección de reloj civil', () => {
+            let monotonic = 100;
+            let wall = 100;
+            const timer = new ClockManager({ initialMs: 10000, incrementMs: 0 }, {
+                now: () => monotonic,
+                wallNow: () => wall
+            });
+            timer.startFirstTurn();
+            monotonic = 200;
+            wall = 4100;
+            equal(timer.consumedMs(), 4000, 'tiempo tras suspensión');
+        });
+
+        test('Configuración ausente o inválida recupera 10+5', () => {
+            const missing = loadSettings({ getItem: () => null });
+            equal(missing.initialMs, 600000, 'predeterminado sin datos');
+            equal(missing.incrementMs, 5000, 'incremento sin datos');
+            for (const value of ['{', '{}', '{"version":1,"initialMs":-1}']) {
+                const loaded = loadSettings({ getItem: () => value });
+                equal(loaded.initialMs, 600000, `recuperación para ${value}`);
+                equal(loaded.incrementMs, 5000, `incremento para ${value}`);
+            }
+        });
+
+        test('Persistencia unificada conserva la última configuración', () => {
+            let stored = null;
+            const storage = {
+                getItem: (key) => key === SETTINGS_STORAGE_KEY ? stored : null,
+                setItem: (key, value) => { if (key === SETTINGS_STORAGE_KEY) stored = value; }
+            };
+            const first = { ...DEFAULT_SETTINGS, initialMs: 900000, incrementMs: 10000 };
+            const second = { ...DEFAULT_SETTINGS, initialMs: 300000, incrementMs: 3000 };
+            assert(persistSettings(first, storage), 'no se guardó 15+10');
+            equal(loadSettings(storage).initialMs, 900000, 'recarga 15+10');
+            assert(persistSettings(second, storage), 'no se guardó 5+3');
+            equal(loadSettings(storage).initialMs, 300000, 'último tiempo');
+            equal(loadSettings(storage).incrementMs, 3000, 'último incremento');
+        });
+
+        test('Aplicar configuración y Nueva partida la conservan', () => {
+            resetGame();
+            document.getElementById('settings-btn').click();
+            document.getElementById('initial-minutes').value = '15';
+            document.getElementById('increment-seconds').value = '10';
+            document.getElementById('piece-style-solid').checked = true;
+            document.getElementById('show-legal-moves').checked = false;
+            document.getElementById('apply-settings').click();
+            equal(settings.initialMs, 900000, 'tiempo aplicado');
+            equal(settings.incrementMs, 10000, 'incremento aplicado');
+            equal(clock.getRemaining('w'), 900000, 'reloj aplicado');
+            resetGame();
+            equal(clock.getRemaining('w'), 900000, 'Nueva partida conserva configuración');
+            equal(clock.getRemaining('b'), 900000, 'reloj negro conservado');
+        });
+
+        test('Destinos posibles deshabilitados por defecto', () => {
+            settings.showLegalMoves = false;
+            resetGame();
+            document.querySelector('[data-square="e2"]').click();
+            equal(document.querySelectorAll('.valid-move, .valid-capture').length, 0, 'marcas ocultas');
+        });
+
+        test('Registro estructurado e historial de cinco columnas', () => {
+            resetGame();
+            clickMove('e2', 'e4');
+            equal(moveRecords.length, 1, 'registros');
+            const record = moveRecords[0];
+            for (const field of ['number', 'color', 'san', 'from', 'to', 'piece', 'capture',
+                'promotion', 'resultingFen', 'consumedMs', 'remainingMs', 'incrementMs']) {
+                assert(Object.hasOwn(record, field), `falta ${field}`);
+            }
+            equal(record.san, 'e4', 'SAN registrada');
+            equal(document.querySelector('#moves-list .move').children.length, 5, 'columnas');
+            equal(document.querySelector('.move-white').textContent, 'e4', 'historial blanco');
+        });
+
+        test('Control visible de pausa y bloqueo durante pausa', () => {
+            resetGame();
+            document.querySelector('[data-square="e2"]').click();
+            pauseOrResume();
+            equal(clock.phase, 'paused', 'fase pausada');
+            clickMove('e2', 'e4');
+            equal(game.history().length, 0, 'movimiento durante pausa');
+            pauseOrResume();
+            equal(clock.phase, 'running', 'fase reanudada');
+            equal(clock.activeColor, 'w', 'reloj reanudado');
+        });
+
+        test('Mate detiene relojes y habilita Lichess', () => {
+            resetGame();
+            clickMove('f2', 'f3');
+            clickMove('e7', 'e5');
+            clickMove('g2', 'g4');
+            clickMove('d8', 'h4');
+            equal(clock.phase, 'finished', 'reloj finalizado');
+            const link = document.getElementById('lichess-link');
+            assert(!link.classList.contains('hidden'), 'enlace oculto');
+            assert(link.href.includes('/analysis/pgn/'), 'ruta de Lichess');
+            assert(link.href.includes('Qh4%23'), 'PGN no codifica #');
+            equal(link.getAttribute('rel'), 'noopener noreferrer', 'protección de enlace');
+        });
+
+        test('Posibilidad de mate tras bandera: casos exactos', () => {
+            const bareKing = new Chess('8/8/8/8/8/8/5k2/7K w - - 0 1');
+            equal(assessMatingPossibility(bareKing, 'w').status, 'impossible', 'rey solo');
+            const bishop = new Chess('8/8/8/8/8/8/5k2/2B4K w - - 0 1');
+            equal(assessMatingPossibility(bishop, 'w').status, 'impossible', 'alfil contra rey');
+            const knight = new Chess('8/8/8/8/8/8/5k2/2N4K w - - 0 1');
+            equal(assessMatingPossibility(knight, 'w').status, 'impossible', 'caballo contra rey');
+        });
+
+        test('Posibilidad de mate: certificado y resolución arbitral', () => {
+            const mateAvailable = new Chess('7k/5Q2/6K1/8/8/8/8/8 w - - 0 1');
+            equal(assessMatingPossibility(mateAvailable, 'w').status, 'possible', 'mate disponible');
+            const uncertain = new Chess();
+            equal(assessMatingPossibility(uncertain, 'w').status, 'undetermined', 'posición compleja');
+        });
+
+        test('Posibilidad de mate: material y casos límite', () => {
+            const cases = [
+                ['dos caballos', 'k7/8/8/8/8/8/8/1NN4K w - - 0 1'],
+                ['pieza menor con material rival', 'k5r1/8/8/8/8/8/8/2B4K w - - 0 1'],
+                ['peón', 'k7/8/8/8/8/8/1P6/7K w - - 0 1'],
+                ['torre', 'k7/8/8/8/8/8/8/1R5K w - - 0 1'],
+                ['dama', 'k7/8/8/8/8/8/8/1Q5K w - - 0 1']
+            ];
+            cases.forEach(([label, fen]) => {
+                const assessment = assessMatingPossibility(new Chess(fen), 'w');
+                assert(assessment.status !== 'impossible', `${label} se declaró imposible sin prueba`);
+            });
+        });
+
+        test('Caída de bandera indeterminada solicita resolución arbitral', () => {
+            resetGame();
+            handleTimeout('w');
+            assert(!document.getElementById('result-modal').classList.contains('hidden'), 'modal oculto');
+            assert(!document.getElementById('timeout-arbitration').classList.contains('hidden'), 'arbitraje oculto');
+            equal(document.getElementById('result-code').textContent, 'Pendiente', 'estado arbitral');
+            document.getElementById('timeout-draw').click();
+            equal(document.getElementById('result-code').textContent, '½-½', 'resultado manual');
+            assert(document.getElementById('timeout-arbitration').classList.contains('hidden'), 'arbitraje sigue visible');
+            equal(clock.phase, 'finished', 'reloj tras resolución');
+            resetGame();
+        });
+
+        test('URL de Lichess usa el PGN completo codificado', () => {
+            resetGame();
+            makeMove({ from: 'e2', to: 'e4' });
+            const url = buildLichessUrl();
+            assert(url.startsWith('https://lichess.org/analysis/pgn/'), 'origen o ruta');
+            assert(url.includes(encodeURIComponent(gameData.pgn)), 'PGN incompleto');
         });
 
         renderResults();

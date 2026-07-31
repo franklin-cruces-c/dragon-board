@@ -11,11 +11,21 @@
         <h1>Tablero de Ajedrez</h1>
         <div class="game-info">
             <section class="board-section" aria-label="Tablero y controles">
+                <div id="clock-black" class="player-clock" data-color="b" aria-label="Reloj de negras">
+                    <span class="clock-label">Negras</span>
+                    <span id="clock-black-time" class="clock-time">10:00</span>
+                </div>
                 <div class="board-container">
                     <div id="chessboard"></div>
                 </div>
+                <div id="clock-white" class="player-clock" data-color="w" aria-label="Reloj de blancas">
+                    <span class="clock-label">Blancas</span>
+                    <span id="clock-white-time" class="clock-time">10:00</span>
+                </div>
                 <div class="controls">
+                    <button id="pause-btn" type="button" disabled>Pausar</button>
                     <button id="reset-btn">Nueva partida</button>
+                    <button id="settings-btn" type="button" aria-label="Configurar partida">⚙</button>
                 </div>
             </section>
             <div class="moves-container">
@@ -25,6 +35,13 @@
                 </section>
                 <section class="history-panel" aria-labelledby="moves-title">
                     <h2 id="moves-title">Jugadas</h2>
+                    <div class="move move-header" aria-hidden="true">
+                        <span>N.º</span>
+                        <span>Blancas</span>
+                        <span>Tiempo</span>
+                        <span>Negras</span>
+                        <span>Tiempo</span>
+                    </div>
                     <div id="moves-list"></div>
                 </section>
             </div>
@@ -65,12 +82,57 @@
                 </div>
             </dl>
             <div class="result-actions">
+                <div id="timeout-arbitration" class="timeout-arbitration hidden">
+                    <p>No se pudo determinar automáticamente si existe posibilidad legal de mate.</p>
+                    <button id="timeout-win" type="button">Victoria por tiempo</button>
+                    <button id="timeout-draw" type="button">Declarar tablas</button>
+                </div>
+                <a id="lichess-link" class="button-link hidden" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Ver partida en Lichess</a>
                 <button id="review-position" type="button">Revisar posición</button>
                 <button id="new-game" type="button">Nueva partida</button>
+            </div>
+            <p id="lichess-status" class="action-status" aria-live="polite"></p>
+        </div>
+    </div>
+    <div id="settings-modal" class="settings-modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-describedby="settings-error">
+        <div class="settings-dialog">
+            <h2 id="settings-title">Configuración de partida</h2>
+            <div class="quick-controls" aria-label="Ritmos rápidos">
+                <button type="button" data-preset="1,0">1+0</button>
+                <button type="button" data-preset="3,0">3+0</button>
+                <button type="button" data-preset="3,2">3+2</button>
+                <button type="button" data-preset="5,0">5+0</button>
+                <button type="button" data-preset="5,3">5+3</button>
+                <button type="button" data-preset="10,0">10+0</button>
+                <button type="button" data-preset="10,5">10+5</button>
+                <button type="button" data-preset="15,10">15+10</button>
+                <button type="button" data-preset="30,0">30+0</button>
+                <button type="button" data-preset="45,15">45+15</button>
+            </div>
+            <div class="settings-fields">
+                <label for="initial-minutes">Tiempo inicial (minutos)</label>
+                <input id="initial-minutes" type="number" min="1" max="1440" step="1">
+                <label for="increment-seconds">Incremento (segundos)</label>
+                <input id="increment-seconds" type="number" min="0" max="3600" step="1">
+                <fieldset>
+                    <legend>Estilo de piezas</legend>
+                    <label><input type="radio" name="piece-style" value="solid"> Rellenas</label>
+                    <label><input type="radio" name="piece-style" value="outline"> Huecas clásicas</label>
+                </fieldset>
+                <label class="checkbox-label">
+                    <input id="show-legal-moves" type="checkbox">
+                    Mostrar destinos posibles
+                </label>
+            </div>
+            <p id="settings-error" class="form-error" aria-live="polite"></p>
+            <div class="settings-actions">
+                <button id="cancel-settings" type="button">Cancelar</button>
+                <button id="apply-settings" type="button">Aplicar</button>
             </div>
         </div>
     </div>
     <script src="vendor/chess.js"></script>
+    <script src="clock.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -25,7 +25,7 @@ Conseguir una interfaz básica funcional y coherente antes de sustituir el motor
 - [x] Representar las piezas como elementos propios y reforzar el contraste de las blancas.
 - [x] Usar piezas Unicode sólidas como estilo predeterminado.
 - [x] Preparar el estilo alternativo de piezas huecas y persistir la preferencia.
-- [ ] Añadir el control visible de estilo al futuro modal de configuración.
+- [x] Añadir el control visible de estilo al modal de configuración.
 - [x] Reorganizar estado, historial y controles en paneles compactos.
 
 ### Estado actual
@@ -77,8 +77,8 @@ Convertir chess.js en la única fuente de verdad de la partida.
 
 ### Estado actual
 
-Implementado y validado técnicamente mediante una batería reproducible de 28
-pruebas: 28 pasan, 0 fallan y 0 no ejecutables. El runner está en
+Implementado y validado técnicamente dentro de una batería reproducible de 46
+pruebas: 46 pasan, 0 fallan y 0 no ejecutables. El runner está en
 `tests/technical.html` y `tests/technical-tests.js`.
 
 Las pruebas visuales de colores de jaque y mate, modal, historial, adaptación
@@ -112,13 +112,12 @@ Registrar cada media jugada con información suficiente para mostrarla y exporta
 - [x] Mostrar blancas y negras por número.
 - [x] Usar SAN y PGN generados por chess.js.
 - [x] Mantener desplazamiento automático.
-- [ ] Guardar SAN, origen, destino, color, número, pieza, captura, promoción y FEN resultante.
+- [x] Guardar SAN, origen, destino, color, número, pieza, captura, promoción y FEN resultante.
 
 ### Estado actual
 
-Presentación actual completada; estructura ajedrecística detallada pendiente.
-Esta estructura base se implementará antes o durante la integración inicial de
-los relojes. Los campos temporales se incorporarán dentro de la etapa 4.
+Presentación y estructura detallada completadas. Cada registro incluye también
+tiempo consumido, tiempo restante e incremento aplicado.
 
 ### Dependencias
 
@@ -144,31 +143,37 @@ historial.
 
 ### Tareas
 
-- [ ] Configurar tiempo inicial e incremento.
-- [ ] Mantener el tiempo restante de blancas y negras.
-- [ ] Mantener ambos relojes detenidos al abrir o iniciar una nueva partida.
-- [ ] Iniciar el reloj blanco con la primera selección válida de una pieza blanca propia que tenga movimientos legales.
-- [ ] Medir cada turno con `performance.now()` como referencia monotónica.
-- [ ] Medir la primera jugada blanca desde esa selección válida hasta que chess.js acepte el movimiento.
-- [ ] Medir los turnos posteriores desde el movimiento legal del rival hasta que chess.js acepte el movimiento propio.
-- [ ] Excluir las pausas del tiempo consumido.
-- [ ] Completar el registro base de jugadas con los campos temporales.
-- [ ] Registrar el tiempo consumido por jugada.
-- [ ] Registrar el tiempo restante y el incremento aplicado por media jugada.
-- [ ] Evolucionar la presentación a cinco columnas: número, jugada blanca, tiempo blanco, jugada negra y tiempo negro.
-- [ ] Cambiar el reloj solo tras un movimiento legal.
-- [ ] Evitar cambios dobles o incorrectos.
-- [ ] Pausar y reanudar.
-- [ ] Aplicar el incremento configurado una sola vez tras cada movimiento legal.
-- [ ] Detener al iniciar una nueva partida, finalizar por reglas o agotarse el tiempo.
-- [ ] Finalizar la partida por caída de bandera.
-- [ ] Señalar claramente el reloj activo.
-- [ ] Mantener precisión al cambiar de pestaña o bloquearse la pantalla sin depender de intervalos acumulativos.
-- [ ] Adaptar configuración, relojes y controles a móvil.
+- [x] Configurar tiempo inicial e incremento, con 10+5 de fábrica.
+- [x] Persistir la última configuración válida en `localStorage`.
+- [x] Mantener el tiempo restante de blancas y negras.
+- [x] Mantener ambos relojes detenidos al abrir o iniciar una nueva partida.
+- [x] Iniciar el reloj blanco con la primera selección válida de una pieza blanca propia que tenga movimientos legales.
+- [x] Medir cada turno con `performance.now()` como referencia monotónica.
+- [x] Medir la primera jugada blanca desde esa selección válida hasta que chess.js acepte el movimiento.
+- [x] Medir los turnos posteriores desde el movimiento legal del rival hasta que chess.js acepte el movimiento propio.
+- [x] Excluir las pausas del tiempo consumido.
+- [x] Completar el registro base de jugadas con los campos temporales.
+- [x] Registrar el tiempo consumido por jugada.
+- [x] Registrar el tiempo restante y el incremento aplicado por media jugada.
+- [x] Evolucionar la presentación a cinco columnas: número, jugada blanca, tiempo blanco, jugada negra y tiempo negro.
+- [x] Cambiar el reloj solo tras un movimiento legal.
+- [x] Evitar cambios dobles o incorrectos.
+- [x] Pausar y reanudar.
+- [x] Aplicar el incremento configurado una sola vez tras cada movimiento legal.
+- [x] Detener al iniciar una nueva partida, finalizar por reglas o agotarse el tiempo.
+- [x] Finalizar la partida por caída de bandera.
+- [x] Resolver automáticamente los casos de mate posible o imposible demostrables y solicitar resolución arbitral en los demás.
+- [x] Señalar claramente el reloj activo.
+- [x] Mantener precisión al cambiar de pestaña o bloquearse la pantalla sin depender de intervalos acumulativos.
+- [x] Adaptar configuración, relojes y controles a móvil.
 
 ### Estado actual
 
-Pendiente.
+Implementado y validado técnicamente. La actualización visual de los relojes se
+separa del cálculo temporal, que combina `performance.now()` con una referencia
+civil auxiliar para detectar suspensiones. La posibilidad de mate tras caída de
+bandera se resuelve automáticamente solo cuando puede probarse con certeza; las
+posiciones no demostradas por la búsqueda acotada requieren decisión arbitral.
 
 ### Dependencias
 
@@ -203,13 +208,14 @@ Obtener los datos completos sin servidor.
 - [ ] Descargar mediante `Blob` y `URL.createObjectURL()`.
 - [ ] Permitir copiar datos cuando corresponda.
 - [ ] Mantener funcionamiento sin backend.
-- [ ] Proponer y aprobar el mecanismo de “Abrir en Lichess”.
-- [ ] Añadir posteriormente “Abrir en Lichess” para trasladar la posición o partida actual al análisis, sin backend.
+- [x] Proponer y aprobar el mecanismo de “Abrir en Lichess”.
+- [x] Añadir “Abrir en Lichess” para trasladar el PGN de la partida finalizada al análisis, sin backend.
 
 ### Estado actual
 
-Pendiente; FEN y PGN solo se muestran en pantalla. “Abrir en Lichess” es un
-requisito futuro y no se implementará hasta aprobar su mecanismo concreto.
+Parcial. La apertura en el análisis de Lichess está implementada para partidas
+finalizadas mediante una URL con el PGN codificado. Las descargas y copias de
+PGN, FEN y CSV continúan pendientes.
 
 ### Dependencias
 
@@ -242,14 +248,14 @@ Comunicar claramente cuándo y por qué terminó la partida.
 - [ ] Validar visualmente “Nueva partida”.
 - [x] Cambiar el texto exterior “Reiniciar Partida” por “Nueva partida”.
 - [x] Usar “Nueva partida” de forma consistente en toda la interfaz.
-- [ ] Ampliar el modal a tablas.
-- [ ] Contemplar posteriormente tiempo y abandono.
+- [x] Ampliar el modal a tablas.
+- [x] Ampliar el modal a finalización por tiempo y resolución arbitral.
+- [ ] Contemplar posteriormente abandono.
 
 ### Estado actual
 
-Implementación y comportamiento técnico de jaque mate validados. La validación
-visual permanece pendiente y no bloqueante. Las tablas todavía no abren el
-modal.
+Implementación técnica de mate, tablas y tiempo validada. La validación visual
+permanece pendiente y no bloqueante.
 
 ### Dependencias
 
@@ -275,7 +281,7 @@ Preparar un MVP fiable y publicable.
 ### Tareas
 
 - [x] Validar técnicamente jaque, mate y todas las tablas automáticas contempladas.
-- [ ] Gestionar tiempo agotado.
+- [x] Gestionar tiempo agotado.
 - [ ] Confirmar acciones destructivas.
 - [x] Probar técnicamente enroque, promoción, captura al paso y todos los finales.
 - [ ] Revisar accesibilidad.
@@ -288,9 +294,9 @@ Preparar un MVP fiable y publicable.
 
 ### Estado actual
 
-Parcial. La batería técnica actual de 28 pruebas pasa por completo, GitHub Pages está
+Parcial. La batería técnica actual de 46 pruebas pasa por completo, GitHub Pages está
 publicado y la aplicación ya fue abierta desde un móvil. Siguen pendientes los
-relojes, las exportaciones y las validaciones visuales y de accesibilidad
+formatos de exportación y las validaciones visuales y de accesibilidad
 registradas en `PRUEBAS.md`.
 
 ### Dependencias

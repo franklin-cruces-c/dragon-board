@@ -22,11 +22,12 @@ Aplicación web de ajedrez presencial para dos jugadores en el mismo dispositivo
 - Registrar independientemente el tiempo exacto consumido por cada jugada blanca y negra.
 - Finalizar la partida por caída de bandera.
 - Exportar PGN, FEN y CSV.
-- Incorporar en una etapa futura “Abrir en Lichess” para trasladar la posición o partida al análisis sin backend.
+- Abrir el PGN de una partida finalizada en el análisis de Lichess sin backend.
 - Funcionar en escritorio y móvil.
 - Usar por defecto piezas Unicode sólidas cuyo color visual dependa del bando.
 - Permitir alternativamente piezas blancas huecas clásicas, conservando negras sólidas.
-- Persistir únicamente la preferencia de estilo de piezas en `localStorage`.
+- Persistir en una única preferencia versionada la configuración válida del
+  reloj, el estilo de piezas y la visualización de destinos posibles.
 
 ## Finalización visual
 
@@ -90,14 +91,22 @@ Aplicación web de ajedrez presencial para dos jugadores en el mismo dispositivo
   pieza, captura, promoción y FEN resultante como estructura base. La etapa de
   relojes completa esa estructura con tiempo consumido, tiempo restante e
   incremento aplicado.
-- “Abrir en Lichess” deberá conservar el funcionamiento estático y no se
-  implementará hasta proponer y aprobar el mecanismo concreto.
+- “Abrir en Lichess” usa el PGN completo codificado en una URL de análisis,
+  únicamente al finalizar la partida y sin enviar otros datos desde la aplicación.
+- La caída de bandera concede la victoria si puede demostrarse una secuencia
+  legal posible de mate para el rival y concede tablas si se demuestra que tal
+  mate es imposible. Los casos que no pueda decidir con certeza la búsqueda
+  acotada requieren una resolución arbitral explícita.
+- La configuración de fábrica es 10 minutos con 5 segundos de incremento
+  Fischer. La última configuración válida aplicada se conserva en
+  `localStorage` con la clave versionada `dragon-board.settings.v1`.
+- No se persisten posición, historial, reloj en curso, pausa ni resultado.
 - Los estilos internos de piezas admitidos son `solid` y `outline`; cualquier
   preferencia ausente, inválida o ilegible recupera `solid`.
 - El cambio de estilo vuelve a representar tablero y promoción sin alterar
   posición, SAN, FEN, PGN, historial, selección, resaltados ni resultado.
-- La interfaz visible para elegir el estilo se incorporará posteriormente al
-  modal de configuración, sin crear un modal temporal independiente.
+- El modal de configuración permite elegir el estilo y activar opcionalmente
+  los destinos posibles, que están deshabilitados por defecto.
 - Código legible, organizado y mantenible.
 
 ## Experiencia de usuario

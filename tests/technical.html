@@ -27,9 +27,13 @@
     <!-- DOM mínimo exigido por script.js; no forma parte de la aplicación. -->
     <div id="fixture" style="position: fixed; left: -10000px; top: 0;">
         <div id="chessboard"></div>
+        <section id="clock-black"><span id="clock-black-time"></span></section>
+        <section id="clock-white"><span id="clock-white-time"></span></section>
         <div id="moves-list"></div>
         <p id="game-status"></p>
+        <button id="pause-btn">Pausar</button>
         <button id="reset-btn">Nueva partida</button>
+        <button id="settings-btn">Configuración</button>
 
         <div id="promotion-modal" class="hidden">
             <button data-promotion="q"><span data-promotion-symbol></span><span>Dama</span></button>
@@ -46,12 +50,38 @@
             <span id="result-winner"></span>
             <span id="result-loser"></span>
             <span id="result-reason"></span>
+            <div id="timeout-arbitration" class="hidden">
+                <button id="timeout-win">Victoria por tiempo</button>
+                <button id="timeout-draw">Tablas</button>
+            </div>
+            <a id="lichess-link" class="hidden" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Abrir en Lichess</a>
+            <span id="lichess-status"></span>
             <button id="review-position">Revisar posición</button>
             <button id="new-game">Nueva partida</button>
+        </div>
+
+        <div id="settings-modal" class="hidden" role="dialog" aria-modal="true"
+            aria-labelledby="settings-title" aria-describedby="settings-description">
+            <h2 id="settings-title">Configuración</h2>
+            <p id="settings-description">Preferencias de partida.</p>
+            <div id="clock-presets">
+                <button data-initial-minutes="1" data-increment-seconds="0">1+0</button>
+                <button data-initial-minutes="10" data-increment-seconds="5">10+5</button>
+                <button data-initial-minutes="15" data-increment-seconds="10">15+10</button>
+            </div>
+            <input id="initial-minutes" type="number">
+            <input id="increment-seconds" type="number">
+            <input id="piece-style-solid" name="piece-style" value="solid" type="radio">
+            <input id="piece-style-outline" name="piece-style" value="outline" type="radio">
+            <input id="show-legal-moves" type="checkbox">
+            <p id="settings-error"></p>
+            <button id="cancel-settings">Cancelar</button>
+            <button id="apply-settings">Aplicar</button>
         </div>
     </div>
 
     <script src="../vendor/chess.js"></script>
+    <script src="../clock.js"></script>
     <script src="../script.js"></script>
     <script src="technical-tests.js"></script>
 </body>
